@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        canvas {
+            border: 1px solid black;
+        }
+        #word {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 24px;
+        }
+    </style>
+</head>
+<body>
+    <div id="word"></div>
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const context = canvas.getContext('2d');
+
+        const box = 20;
+        const canvasSize = 20;
+
+        const words = [
+            { word: 'inevitable', correct: 'unavoidable', incorrect: 'impossible' },
+            { word: 'perceive', correct: 'understand', incorrect: 'ignore' },
+            { word: 'in-text citation', correct: '(Smith, 1984)', incorrect: '(Smith 1984)' },
+            // Add more words as needed
+        ];
+
+        let currentWord = {};
+        let snake = [];
+        snake[0] = { x: 9 * box, y: 10 * box };
+
+        let correctFruit, incorrectFruit;
+        let direction;
+
+        document.addEventListener('keydown', setDirection);
+
+        function setDirection(event) {
+            if (event.keyCode === 37 && direction !== 'RIGHT') {
+                direction = 'LEFT';
+            } else if (event.keyCode === 38 && direction !== 'DOWN') {
+                direction = 'UP';
+            } else if (event.keyCode === 39 && direction !== 'LEFT') {
+                direction = 'RIGHT';
+            } else if (event.keyCode === 40 && direction !== 'UP') {
+                direction = 'DOWN';
+            }
+        }
+
+        function collision(newHead, snakeArray) {
+            for (let i = 0; i < snakeArray.length; i++) {
+                if (newHead.x === snakeArray[i].x && newHead.y === snakeArray[i].y) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function setNewWord() {
+            currentWord = words[Math.floor(Math.random() * words.length)];
+            document.getElementById('word').textContent = currentWord.word;
+            correctFruit = {
+                x: Math.floor(Math.random() * canvasSize) * box,
+                y: Math.floor(Math.random() * canvasSize) * box,
+                definition: currentWord.correct
+            };
+            do {
+                incorrectFruit = {
+                    x: Math.floor(Math.random() * canvasSize) * box,
+                    y: Math.floor(Math.random() * canvasSize) * box,
+                    definition: currentWord.incorrect
+                };
+            } while (incorrectFruit.x === correctFruit.x && incorrectFruit.y === correctFruit.y);
+        }
+
+        function draw() {
+            context.clearRect(0, 0, canvas.width, canvas.height);
+
+            for (let i = 0; i < snake.length; i++) {
+                context.fillStyle = i === 0 ? 'green' : 'white';
+                context.fillRect(snake[i].x, snake[i].y, box, box);
+
+                context.strokeStyle = 'red';
+                context.strokeRect(snake[i].x, snake[i].y, box, box);
+            }
+
+            context.fillStyle = 'yellow';
+            context.fillRect(correctFruit.x, correctFruit.y, box, box);
+            context.fillStyle = 'yellow';
+            context.fillRect(incorrectFruit.x, incorrectFruit.y, box, box);
+
+            context.fillStyle = 'black';
+            context.fillText(correctFruit.definition, correctFruit.x, correctFruit.y + box / 2);
+            context.fillText(incorrectFruit.definition, incorrectFruit.x, incorrectFruit.y + box / 2);
+
+            let snakeX = snake[0].x;
+            let snakeY = snake[0].y;
+
+            if (direction === 'LEFT') snakeX -= box;
+            if (direction === 'UP') snakeY -= box;
+            if (direction === 'RIGHT') snakeX += box;
+            if (direction === 'DOWN') snakeY += box;
+
+            if (snakeX === correctFruit.x && snakeY === correctFruit.y) {
+                setNewWord();
+            } else if (snakeX === incorrectFruit.x && snakeY === incorrectFruit.y) {
+                clearInterval(game);
+            } else {
+                snake.pop();
+            }
+
+            let newHead = { x: snakeX, y: snakeY };
+
+            if (snakeX < 0 || snakeY < 0 || snakeX >= canvas.width || snakeY >= canvas.height || collision(newHead, snake)) {
+                clearInterval(game);
+            }
+
+            snake.unshift(newHead);
+        }
+
+        setNewWord();
+        let game = setInterval(draw, 100);
+    </script>
+</body>
+</html>
